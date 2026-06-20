@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.__version__ import __version__
 from app.backend.auth import Session
 from app.backend.excel_service import ExcelError, create_excel_service
 from app.backend.inventory_repo import InventoryRepo
@@ -178,6 +179,10 @@ class MainWindow(QMainWindow):
         low = len(self._repo.low_stock()) if self._repo else 0
         cl.addWidget(QLabel(fa.LBL_TOTAL_ITEMS.format(count=to_persian_digits(total))))
         cl.addWidget(QLabel(fa.LBL_LOW_STOCK_BADGE.format(count=to_persian_digits(low))))
+
+        version = QLabel(f"نسخه {to_persian_digits(__version__)}")
+        version.setObjectName("subtitle")
+        cl.addWidget(version)
 
         lay.addWidget(card)
         return page

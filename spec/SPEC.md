@@ -18,8 +18,10 @@ low-stock alerts, and Persian (Jalali) daily logging.
 - **Single PC, multiple logins.** One Windows machine; multiple people log in with their own
   accounts/roles at different times. No concurrent multi-machine access → **no network file
   locking required**.
-- **MS Excel is installed** on the machine, enabling COM automation (xlwings) for reliable
-  read/write with Excel's native passwords.
+- **No MS Excel dependency.** Encryption/decryption is pure Python (`msoffcrypto` + `openpyxl`),
+  so the app behaves identically on the Ubuntu dev machine and the Windows target. (An earlier
+  plan used xlwings/COM; this was superseded once `msoffcrypto` proved able to both decrypt and
+  re-encrypt.)
 - Distributed as a **PyInstaller one-folder** build; `.env`, the Persian font, and produced
   `.log` files sit next to the executable.
 
@@ -37,18 +39,19 @@ low-stock alerts, and Persian (Jalali) daily logging.
 
 ## 4. Data store — encrypted Excel
 
-- The inventory is a **password-protected `.xlsx`** with two passwords:
-  - **Read-only password** → Excel "password to open" (decrypts the file).
-  - **Read-write password** → Excel "password to modify" (`write_res_password`; required to save).
-- Both passwords are read from `.env` (`EXCEL_READ_PASSWORD`, `EXCEL_WRITE_PASSWORD`).
-- **Read-only sessions** open the workbook with only the read password → file is read-only.
-- **Write-capable sessions** (Admin/Privileged) also supply the write password → saving allowed.
-- Implementation: **xlwings** (`app.books.open(path, password=..., write_res_password=...)`),
-  Excel launched **invisible/headless**, workbook + app **always closed in `finally`**.
-- Inventory rows are loaded into a **pandas DataFrame** for fast in-memory search/filter; edits
-  are written back through xlwings and saved.
-- **Admin "upload initial inventory"**: the admin selects an encrypted `.xlsx`; the app validates
-  the columns and registers it as the active data file (replacing any previous active file).
+- The inventory is a **password-protected `.xlsx`** with two passwords from `.env`
+  (`EXCEL_READ_PASSWORD`, `EXCEL_WRITE_PASSWORD`):
+  - **Read-only password** = the Excel open/encryption password — used by `msoffcrypto` to
+    **decrypt** when reading and to **re-encrypt** after writing.
+  - **Read-write (modify) password** is enforced at the **role/app layer**: only a *writable*
+    `ExcelService` (built for Admin/Privileged) performs saves (`_require_writable`).
+- Implementation: `msoffcrypto` decrypt → `openpyxl` read/edit → `msoffcrypto` re-encrypt, with an
+  atomic `.tmp` + replace save (`app/backend/excel_service.py`). No Excel process involved.
+- The canonical sheet is **`همه`**; columns are mapped positionally (`INVENTORY_FIELDS`) after
+  header detection. `total_qty` may be a formula (`carton × per`): read the cached value or
+  compute it; write literal integers.
+- Rows are loaded once into an in-memory `list[Product]` with a barcode index for fast
+  search/lookup (`app/backend/inventory_repo.py`).
 - Inventory columns: see [`data-model.md`](data-model.md).
 
 ## 5. User store — separate encrypted file
