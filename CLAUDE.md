@@ -22,8 +22,8 @@ Full requirements live in [`spec/`](spec/):
 | Concern | Choice | Notes |
 |---|---|---|
 | GUI | **PySide6 (Qt)** | RTL layout, Persian font (Vazirmatn) |
-| Excel I/O | **xlwings** (COM) | MS Excel is installed on target; honors both passwords natively |
-| In-memory data | **pandas** (+ `openpyxl` as engine fallback) | fast filtering/search |
+| Excel I/O | **msoffcrypto + openpyxl** | pure-Python decrypt/re-encrypt; cross-platform, no MS Excel needed |
+| In-memory data | plain `list[Product]` + barcode dict | small dataset; no pandas needed |
 | Dates | **jdatetime** | Solar Hijri (Jalali) for log names + UI |
 | Password hashing | **bcrypt** | user passwords never stored plaintext |
 | User-store encryption | **cryptography** (Fernet) | encrypts the local user DB |
@@ -62,11 +62,12 @@ python tools/build_exe.py
 2. **RTL everywhere.** The app sets `Qt.RightToLeft`. New views/dialogs must lay out correctly in
    RTL. Display numbers and dates through `utils_fa.py` (Persian digits, Jalali calendar).
 3. **All Excel access goes through `excel_service.py` → `inventory_repo.py`.** Never open the
-   workbook from a view. **Always close the COM workbook/app in a `finally` block** to avoid
-   orphaned `EXCEL.EXE` processes. See the `excel-data` skill.
-4. **Passwords map to Excel-native features:** read-only password → Excel "password to open";
-   read-write password → Excel "password to modify" (`write_res_password`). Read-only sessions
-   open without the write password (file stays read-only).
+   workbook from a view. The service decrypts with `msoffcrypto`, edits with `openpyxl`, and
+   re-encrypts with `msoffcrypto` (pure Python, cross-platform). See the `excel-data` skill.
+4. **Read-only password** (`EXCEL_READ_PASSWORD`) is the Excel open/encryption password (used to
+   decrypt and re-encrypt). The **read-write (modify) password** is enforced at the **role/app
+   layer**: only a *writable* `ExcelService` (created for write-capable roles) performs saves.
+   The canonical sheet is `همه`; `total_qty` may be a formula — read cached value, write literals.
 5. **Roles gate actions, not just UI.** Check the role in the backend before any write, in
    addition to hiding/disabling UI. Roles: `ADMIN` (everything + user mgmt), `PRIVILEGED`
    (everything except user mgmt), `READ_ONLY` (view only).

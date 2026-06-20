@@ -1,12 +1,17 @@
 ---
 name: excel-data
-description: Use when reading from or writing to the password-protected inventory Excel file, or editing excel_service.py / inventory_repo.py. Covers xlwings/COM password handling, guaranteed Excel cleanup, the repo boundary, and read/write role mapping. Trigger for any inventory data-access work.
+description: Use when reading from or writing to the password-protected inventory Excel file, or editing excel_service.py / inventory_repo.py. Covers the pure-Python msoffcrypto+openpyxl backend, the repo boundary, role-gated writes, and the formula/canonical-sheet quirks. Trigger for any inventory data-access work.
 ---
 
 # excel-data
 
-The inventory lives in a **password-protected `.xlsx`** accessed via **xlwings (COM)**, because
-MS Excel is installed on the target machine. Follow these rules for all data access.
+The inventory lives in a **password-protected `.xlsx`** accessed via a **pure-Python crypto
+backend**: `msoffcrypto` decrypts → `openpyxl` reads/edits → `msoffcrypto` re-encrypts. This is
+cross-platform (Ubuntu dev and Windows prod behave identically) and needs **no MS Excel install**.
+Follow these rules for all data access.
+
+> Note: an earlier plan considered xlwings/COM; we switched to the crypto backend because
+> `msoffcrypto` can both decrypt and encrypt, which is simpler and dependency-free.
 
 ## Boundaries
 
@@ -17,58 +22,44 @@ MS Excel is installed on the target machine. Follow these rules for all data acc
 
 ## Password / role mapping
 
-- **Read-only password** (`EXCEL_READ_PASSWORD`) → Excel "password to open" → `password=`.
-- **Read-write password** (`EXCEL_WRITE_PASSWORD`) → Excel "password to modify" →
-  `write_res_password=`.
-- A **read-only session** opens with only the read password (the file stays read-only).
-- A **write-capable session** (Admin/Privileged) also supplies the write password so `save()`
-  works. Decide which passwords to pass based on the **session role**, and re-check the role in
-  the backend before any write — never trust the UI alone.
+- **Read-only password** (`EXCEL_READ_PASSWORD`) is the Excel open/encryption password — used by
+  `msoffcrypto` to **decrypt** when reading and to **re-encrypt** when saving.
+- **Read-write (modify) password** (`EXCEL_WRITE_PASSWORD`) is enforced at the **role/app layer**:
+  only a *writable* `ExcelService` (built for Admin/Privileged) calls the write methods. Re-check
+  the role in the backend (`_require_writable`) — never trust the UI alone.
 
-## Always close Excel (no orphaned EXCEL.EXE)
-
-Launch Excel **invisible/headless** and guarantee teardown in `finally`:
+## Read / write pattern (pure Python)
 
 ```python
-import xlwings as xw
+# read
+office = msoffcrypto.OfficeFile(open(path, "rb")); office.load_key(password=read_pw)
+buf = io.BytesIO(); office.decrypt(buf); buf.seek(0)
+wb = openpyxl.load_workbook(buf, data_only=True)   # data_only -> cached formula values
 
-def _open(path, *, write):
-    app = xw.App(visible=False, add_book=False)
-    app.display_alerts = False
-    app.screen_updating = False
-    try:
-        book = app.books.open(
-            path,
-            password=EXCEL_READ_PASSWORD,
-            write_res_password=(EXCEL_WRITE_PASSWORD if write else None),
-            read_only=not write,
-        )
-        try:
-            ...  # read into DataFrame, or write cells then book.save()
-        finally:
-            book.close()
-    finally:
-        app.quit()  # also kill the app instance; verify no EXCEL.EXE remains
+# write (atomic + re-encrypt)
+plain = io.BytesIO(); wb.save(plain)               # load with data_only=False to edit
+enc = io.BytesIO(); OOXMLFile(plain).encrypt(read_pw, enc)
+tmp = path.with_suffix(path.suffix + ".tmp"); tmp.write_bytes(enc.getvalue()); tmp.replace(path)
 ```
 
-- Never leave an `App` or `Book` open across UI events. Open → operate → close within one call.
-- Set `display_alerts=False` so password/save dialogs don't block headless runs.
+- Open → operate → save within one method; don't hold a workbook across UI events.
+- Use a `.tmp` + `replace()` for atomic saves (already implemented in `excel_service.py`).
 
-## Column mapping
-
-Use the single Persian-header ⇄ internal-field mapping (see `spec/data-model.md`). Reuse the
-Persian header strings from `i18n/fa.py` for display; keep the parsing map in the backend model
-module so it stays the source of truth.
+## Canonical sheet & quirks (real `samen.xlsx`)
+- Canonical sheet = **`همه`**; columns mapped positionally (`INVENTORY_FIELDS`) after header
+  detection. Display labels live in `i18n/fa.py`.
+- `total_qty` is often a **formula** (`carton_count × qty_per_carton`). On read, use the cached
+  value (`data_only=True`) or compute it; on write, store a **literal int** (headless openpyxl
+  doesn't evaluate formulas).
+- `barcode` and `min_threshold` are frequently **empty** → map blanks to `None`, never `0`.
 
 ## Validation on write
-- `barcode` required, unique, stored as text (preserve leading zeros).
-- `total_qty`, `qty_per_unit`, `min_threshold` non-negative integers.
-- `unit_type` ∈ {`کارتن`, `عددی`}.
+- `name` required. `barcode` optional, text (preserve leading zeros), warn on duplicates.
+- `carton_count`, `qty_per_carton`, `total_qty`, `min_threshold`, `section`: non-negative int or empty.
 
 ## Verification after changes
-- Round-trip: edit a product, save, reopen → change persisted.
-- Confirm **no orphaned `EXCEL.EXE`** process remains after operations (Task Manager / `tasklist`).
-- A read-only session must be unable to save.
+- Round-trip on a **copy**: add/edit/delete, reopen → change persisted, file still encrypted.
+- A read-only `ExcelService` must raise on any write method.
 
 ## References
 - `spec/SPEC.md` §4 (data store), `spec/data-model.md` (columns & types).

@@ -14,9 +14,7 @@ dependencies = [
     "cryptography>=42.0",
     "python-dotenv>=1.0",
     "openpyxl>=3.1",
-    "pandas>=2.2",
     "msoffcrypto-tool>=5.4",
-    "xlwings>=0.31 ; platform_system == 'Windows'",
 ]
 
 [project.scripts]
