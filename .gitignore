@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- hyper_samen_one app-specific ---
+.env
+users.dat
+*.log
+# real/runtime inventory data is never committed (business data; weak temp password).
+# the logo (data/logo.png) IS committed — it is bundled into the app.
+data/*.xlsx
+data/exports/

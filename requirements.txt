@@ -1,0 +1,15 @@
+# Runtime dependencies for هایپرمارکت ثامن (Hyper Market Samen)
+# Tested on Python 3.14 (Ubuntu dev) — also targets Windows.
+
+PySide6>=6.7            # GUI (RTL Persian)
+jdatetime>=4.1          # Solar Hijri (Jalali) dates — log names + UI
+bcrypt>=4.1             # user password hashing
+cryptography>=42.0      # Fernet user-store encryption + OOXML agile encryption
+python-dotenv>=1.0      # load .env next to the executable
+openpyxl>=3.1           # read/write the .xlsx contents
+pandas>=2.2             # in-memory inventory filtering/search
+msoffcrypto-tool>=5.4   # decrypt the password-protected .xlsx (cross-platform)
+
+# Windows-only: native Excel automation honoring both passwords.
+# Installed automatically only on Windows; harmless to omit on Linux.
+xlwings>=0.31 ; platform_system == "Windows"

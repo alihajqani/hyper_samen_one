@@ -1,0 +1,4 @@
+# Development / build dependencies.
+-r requirements.txt
+
+pyinstaller>=6.6        # package the Windows/Linux executable
