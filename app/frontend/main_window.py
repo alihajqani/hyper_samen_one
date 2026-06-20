@@ -183,7 +183,12 @@ class MainWindow(QMainWindow):
         return page
 
     def _make_inventory_page(self) -> QWidget:
-        return _placeholder()
+        if self._repo is None:
+            return _placeholder()
+        from app.frontend.inventory_view import InventoryView
+
+        self._inventory_view = InventoryView(self._repo, on_changed=self._refresh_badge)
+        return self._inventory_view
 
     def _make_reports_page(self) -> QWidget:
         return _placeholder()
