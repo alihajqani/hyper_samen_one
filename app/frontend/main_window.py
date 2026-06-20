@@ -191,7 +191,12 @@ class MainWindow(QMainWindow):
         return self._inventory_view
 
     def _make_reports_page(self) -> QWidget:
-        return _placeholder()
+        if self._repo is None:
+            return _placeholder()
+        from app.frontend.reports_view import ReportsView
+
+        self._reports_view = ReportsView(self._repo)
+        return self._reports_view
 
     def _make_users_page(self) -> QWidget:
         from app.frontend.users_view import UsersView
