@@ -21,7 +21,7 @@ from app.backend.inventory_repo import InventoryRepo
 from app.backend.models import INVENTORY_FIELDS, Product
 from app.frontend.i18n import fa
 from app.frontend.utils_fa import display, to_persian_digits
-from app.frontend.widgets.common import show_info
+from app.frontend.widgets.common import confirm, show_error, show_info
 from app.frontend.widgets.search_bar import SearchBar
 
 logger = logging.getLogger("hyper_samen.ui.inventory")
@@ -99,6 +99,19 @@ class InventoryView(QWidget):
         self._search.submitted.connect(self._on_scan)
         top.addWidget(self._search, 1)
 
+        if self._repo.writable:
+            self._add_btn = QPushButton(fa.BTN_ADD)
+            self._add_btn.clicked.connect(self._on_add)
+            self._edit_btn = QPushButton(fa.BTN_EDIT)
+            self._edit_btn.setObjectName("ghost")
+            self._edit_btn.clicked.connect(self._on_edit)
+            self._del_btn = QPushButton(fa.BTN_DELETE)
+            self._del_btn.setObjectName("danger")
+            self._del_btn.clicked.connect(self._on_delete)
+            top.addWidget(self._add_btn)
+            top.addWidget(self._edit_btn)
+            top.addWidget(self._del_btn)
+
         self._refresh_btn = QPushButton(fa.BTN_REFRESH)
         self._refresh_btn.setObjectName("ghost")
         self._refresh_btn.clicked.connect(self.reload)
@@ -118,9 +131,70 @@ class InventoryView(QWidget):
         self._table.verticalHeader().setVisible(False)
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        if self._repo.writable:
+            self._table.doubleClicked.connect(lambda *_: self._on_edit())
         lay.addWidget(self._table, 1)
 
         self._update_count(len(self._repo.products))
+
+    # -- write operations (write roles only) ----------------------------------
+
+    def _barcodes_except(self, product: Product | None) -> set[str]:
+        return {
+            p.barcode for p in self._repo.products
+            if p.barcode and p is not product
+        }
+
+    def _after_change(self) -> None:
+        self._search.clear()
+        self._model.set_products(self._repo.products)
+        self._update_count(len(self._repo.products))
+        if self._on_changed:
+            self._on_changed()
+
+    def _on_add(self) -> None:
+        from app.frontend.product_dialog import ProductDialog
+
+        dlg = ProductDialog(self, existing_barcodes=self._barcodes_except(None))
+        if dlg.exec():
+            try:
+                self._repo.add(dlg.product())
+            except Exception as exc:  # noqa: BLE001
+                show_error(self, fa.ERR_GENERIC.format(detail=exc))
+                return
+            self._after_change()
+            show_info(self, fa.MSG_SAVED)
+
+    def _on_edit(self) -> None:
+        from app.frontend.product_dialog import ProductDialog
+
+        product = self.selected_product()
+        if product is None:
+            return
+        dlg = ProductDialog(self, product=product,
+                            existing_barcodes=self._barcodes_except(product))
+        if dlg.exec():
+            try:
+                self._repo.update(dlg.product())
+            except Exception as exc:  # noqa: BLE001
+                show_error(self, fa.ERR_GENERIC.format(detail=exc))
+                return
+            self._after_change()
+            show_info(self, fa.MSG_SAVED)
+
+    def _on_delete(self) -> None:
+        product = self.selected_product()
+        if product is None:
+            return
+        if not confirm(self, fa.CONFIRM_DELETE_PRODUCT.format(name=product.name)):
+            return
+        try:
+            self._repo.delete(product)
+        except Exception as exc:  # noqa: BLE001
+            show_error(self, fa.ERR_GENERIC.format(detail=exc))
+            return
+        self._after_change()
+        show_info(self, fa.MSG_DELETED)
 
     # -- behavior -------------------------------------------------------------
 
