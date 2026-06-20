@@ -194,4 +194,7 @@ class MainWindow(QMainWindow):
         return _placeholder()
 
     def _make_users_page(self) -> QWidget:
-        return _placeholder()
+        from app.frontend.users_view import UsersView
+
+        self._users_view = UsersView(self._auth.store, self._session.user.username)
+        return self._users_view
