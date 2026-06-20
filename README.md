@@ -32,6 +32,20 @@ python main.py --check          # بررسی سلامت
 python main.py                  # اجرای برنامه (از v0.4.0)
 ```
 
+## ساخت فایل اجرایی (ویندوز/لینوکس)
+```bash
+pip install -r requirements-dev.txt
+python tools/build_exe.py
+```
+خروجی به‌صورت «تک‌پوشه» در `dist/hyper_samen_one/` ساخته می‌شود. فایل‌های زمان‌اجرا کنار فایل
+اجرایی قرار می‌گیرند:
+- `.env` (رمزها) — باید پر شود.
+- `data/samen.xlsx` (فایل موجودی رمزدار).
+- `users.dat` و `YYYYMMDD.log` (به‌صورت خودکار ساخته می‌شوند).
+
+برای آیکون ویندوز، فایل `data/app.ico` را قرار دهید؛ برای فونت فارسی، فایل
+`app/frontend/assets/Vazirmatn-Regular.ttf` را اضافه کنید (هر دو اختیاری).
+
 ## ساختار
 - `app/backend/` — پیکربندی، لاگ، داده، احراز هویت.
 - `app/frontend/` — رابط گرافیکی PySide6 (فارسی، RTL).
