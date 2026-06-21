@@ -41,9 +41,16 @@ pyinstaller main.py \
 
 These runtime files are **created at run time**, not bundled — never ship real secrets/data.
 
-## xlwings note
-xlwings drives the installed MS Excel via COM, so Excel must be present on the target machine
-(a stated assumption). PyInstaller does not bundle Excel.
+## No Excel dependency
+The app reads/writes the encrypted `.xlsx` with pure-Python `msoffcrypto` + `openpyxl`, so the
+build needs **no** MS Excel on the runner or target machine. (See the `excel-data` skill.)
+
+## CI release (GitHub Actions)
+`.github/workflows/release.yml` builds the Windows `.zip` (on `windows-latest`) and Linux
+`.tar.gz` (on `ubuntu-latest`) from `tools/build_exe.py` and attaches them to a GitHub Release.
+It triggers on pushing a `v*` tag, or manually via `workflow_dispatch` (supply an existing tag).
+The Linux job installs Qt runtime libs (`libegl1 libgl1 libxkbcommon0 libdbus-1-3 libxcb-cursor0`)
+so PyInstaller can analyze PySide6. Releases use the built-in `GITHUB_TOKEN` (no extra secrets).
 
 ## Smoke test the build
 1. Copy the `dist/hyper_samen_one/` folder to a clean path.
