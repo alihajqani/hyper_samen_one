@@ -6,6 +6,15 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-06-22
+### Fixed
+- Segfault on Linux after login: closing the login window from within its own
+  signal handler caused Qt to crash ("delete-during-signal"). Fixed by deferring
+  the login→main and logout→login window transitions to the next event-loop tick
+  via `QTimer.singleShot(0, ...)` in `AppController`.
+- Set `QT_QPA_PLATFORM=xcb` automatically on Linux (before Qt initialises) to
+  avoid Wayland compositor segfaults unrelated to the above.
+
 ## [1.1.1] - 2026-06-22
 ### Changed
 - Converted all development artifacts (log messages, comments, print statements, workflow
@@ -117,7 +126,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `main.py` entry point with `--check` health-check mode.
 - Documentation: `CLAUDE.md`, `spec/`, and custom skills.
 
-[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/alihajqani/hyper_samen_one/compare/v0.9.0...v1.0.0

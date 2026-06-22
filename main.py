@@ -9,7 +9,13 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
+
+# On Linux/Wayland, PySide6 segfaults after window transitions; XCB is stable.
+# Set before any Qt import so the platform plugin is selected at startup.
+if sys.platform.startswith("linux") and "QT_QPA_PLATFORM" not in os.environ:
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 from app.__version__ import __version__
 from app.backend.config import load_config

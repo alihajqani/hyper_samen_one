@@ -100,6 +100,12 @@ class AppController(QObject):
         self._login.show()
 
     def _on_logged_in(self, session) -> None:
+        # Defer to the next event-loop tick so Qt finishes processing the
+        # login button's clicked signal before we close the login window.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, lambda: self._open_main(session))
+
+    def _open_main(self, session) -> None:
         from app.frontend.main_window import MainWindow
 
         if self._login is not None:
@@ -110,6 +116,12 @@ class AppController(QObject):
         self._main.show()
 
     def _on_logout(self) -> None:
+        # Same deferral: the logout button signal must finish before we close
+        # the main window that hosts the button.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._close_main)
+
+    def _close_main(self) -> None:
         if self._main is not None:
             self._main.close()
             self._main = None
