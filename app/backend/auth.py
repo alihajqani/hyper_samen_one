@@ -50,18 +50,18 @@ class AuthService:
 
     def create_initial_admin(self, username: str, password: str) -> Session:
         user = self._store.create_initial_admin(username, password)
-        logger.info("مدیر اولیه ایجاد شد: %s", username)
+        logger.info("Initial admin created: %s", username)
         return Session(user=user)
 
     def login(self, username: str, password: str) -> Session:
         user = self._store.get(username)
         if user is None or not verify_password(password, user.password_hash):
-            logger.warning("ورود ناموفق برای نام کاربری: %s", username)
+            logger.warning("Failed login for username: %s", username)
             raise AuthError("نام کاربری یا رمز عبور نادرست است")
         if not user.is_active:
-            logger.warning("ورود کاربر غیرفعال: %s", username)
+            logger.warning("Disabled user login attempt: %s", username)
             raise AuthError("این کاربر غیرفعال است")
-        logger.info("ورود موفق: %s (%s)", username, user.role.value)
+        logger.info("Successful login: %s (%s)", username, user.role.value)
         return Session(user=user)
 
     @property

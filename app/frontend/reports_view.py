@@ -45,7 +45,7 @@ def export_low_stock(products: list[Product], path: Path) -> None:
         ws.append([getattr(p, f) for f in _REPORT_FIELDS])
     path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(path)
-    logger.info("خروجی گزارش کالاهای رو به اتمام ذخیره شد: %s (%d ردیف)", path, len(products))
+    logger.info("Low-stock report exported: %s (%d rows)", path, len(products))
 
 
 class ReportsView(QWidget):

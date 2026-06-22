@@ -130,7 +130,7 @@ class ExcelService:
             if not product.name:
                 continue
             products.append(product)
-        logger.info("خواندن موجودی: %d کالا از شیت «%s»", len(products), ws.title)
+        logger.info("Loaded inventory: %d products from sheet '%s'", len(products), ws.title)
         return products
 
     def _require_writable(self) -> None:
@@ -150,7 +150,7 @@ class ExcelService:
         self._write_row(ws, product)
         plain = io.BytesIO(); wb.save(plain)
         self._encrypt_and_save(plain)
-        logger.info("به‌روزرسانی کالا در ردیف %d: %s", product.row, product.name)
+        logger.info("Updated product at row %d: %s", product.row, product.name)
 
     def append_product(self, product: Product) -> int:
         self._require_writable()
@@ -161,7 +161,7 @@ class ExcelService:
         self._write_row(ws, product)
         plain = io.BytesIO(); wb.save(plain)
         self._encrypt_and_save(plain)
-        logger.info("افزودن کالای جدید در ردیف %d: %s", new_row, product.name)
+        logger.info("Added new product at row %d: %s", new_row, product.name)
         return new_row
 
     def delete_product(self, product: Product) -> None:
@@ -173,7 +173,7 @@ class ExcelService:
         ws.delete_rows(product.row, 1)
         plain = io.BytesIO(); wb.save(plain)
         self._encrypt_and_save(plain)
-        logger.info("حذف کالا در ردیف %d: %s", product.row, product.name)
+        logger.info("Deleted product at row %d: %s", product.row, product.name)
 
 
 def create_excel_service(config, writable: bool) -> ExcelService:

@@ -111,7 +111,7 @@ class UserStore:
         )
         self._users[username.lower()] = user
         self._save()
-        logger.info("کاربر جدید ایجاد شد: %s (%s)", username, role.value)
+        logger.info("User created: %s (%s)", username, role.value)
         return user
 
     def create_initial_admin(self, username: str, password: str) -> User:
@@ -124,7 +124,7 @@ class UserStore:
             raise UserStoreError("کاربر یافت نشد.")
         del self._users[username.lower()]
         self._save()
-        logger.info("کاربر حذف شد: %s", username)
+        logger.info("User deleted: %s", username)
 
     def set_active(self, username: str, active: bool) -> None:
         user = self.get(username)
@@ -132,7 +132,7 @@ class UserStore:
             raise UserStoreError("کاربر یافت نشد.")
         user.is_active = active
         self._save()
-        logger.info("وضعیت کاربر %s به %s تغییر کرد", username, active)
+        logger.info("User %s active status changed to %s", username, active)
 
     def set_password(self, username: str, password: str) -> None:
         user = self.get(username)
@@ -142,4 +142,4 @@ class UserStore:
             raise UserStoreError("رمز عبور نمی‌تواند خالی باشد.")
         user.password_hash = hash_password(password)
         self._save()
-        logger.info("رمز عبور کاربر %s تغییر کرد", username)
+        logger.info("Password changed for user %s", username)

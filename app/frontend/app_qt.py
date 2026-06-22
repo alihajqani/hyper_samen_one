@@ -18,7 +18,7 @@ from app.frontend.widgets.common import font_path, logo_path, show_error
 
 logger = logging.getLogger("hyper_samen.ui")
 
-# Brand palette (هایپرمارکت ثامن).
+# Brand palette (Hyper Market Samen).
 PRIMARY = "#1565c0"
 PRIMARY_DARK = "#0d47a1"
 ACCENT = "#e53935"
@@ -76,7 +76,7 @@ def _apply_font(app: QApplication) -> None:
         font.setFamily(family)
         app.setFont(font)
     else:
-        logger.info("فونت فارسی اختصاصی یافت نشد؛ از فونت پیش‌فرض سیستم استفاده می‌شود.")
+        logger.info("Bundled Persian font not found; using the system default font.")
 
 
 class AppController(QObject):
@@ -136,11 +136,11 @@ def run_app(config, app_logger: logging.Logger) -> int:
         store = UserStore(config.user_store_file, config.user_store_key)
     except UserStoreError as exc:
         show_error(None, str(exc))
-        app_logger.error("راه‌اندازی انباره کاربران ناموفق بود: %s", exc)
+        app_logger.error("Failed to initialize the user store: %s", exc)
         return 1
 
     auth = AuthService(store)
     controller = AppController(config, auth)
     controller.start()
-    app_logger.info("رابط گرافیکی اجرا شد")
+    app_logger.info("GUI started")
     return app.exec()

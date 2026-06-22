@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
             self._repo.load()
         except ExcelError as exc:
             self._repo = None
-            logger.error("بارگذاری موجودی ناموفق بود: %s", exc)
+            logger.error("Failed to load inventory: %s", exc)
             show_error(self, str(exc))
 
     @property
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
         cl.addWidget(QLabel(fa.LBL_TOTAL_ITEMS.format(count=to_persian_digits(total))))
         cl.addWidget(QLabel(fa.LBL_LOW_STOCK_BADGE.format(count=to_persian_digits(low))))
 
-        version = QLabel(f"نسخه {to_persian_digits(__version__)}")
+        version = QLabel(fa.LBL_VERSION.format(version=to_persian_digits(__version__)))
         version.setObjectName("subtitle")
         cl.addWidget(version)
 

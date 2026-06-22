@@ -41,6 +41,7 @@ MSG_FILL_ALL_FIELDS = "لطفاً همهٔ فیلدها را پر کنید"
 MSG_WELCOME = "خوش آمدید"
 
 # --- Navigation --------------------------------------------------------------
+LBL_VERSION = "نسخه {version}"
 NAV_HOME = "خانه"
 NAV_INVENTORY = "موجودی کالا"
 NAV_REPORTS = "گزارش‌ها"
