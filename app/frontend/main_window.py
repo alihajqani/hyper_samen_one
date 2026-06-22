@@ -192,7 +192,12 @@ class MainWindow(QMainWindow):
             return _placeholder()
         from app.frontend.inventory_view import InventoryView
 
-        self._inventory_view = InventoryView(self._repo, on_changed=self._refresh_badge)
+        self._inventory_view = InventoryView(
+            self._repo,
+            on_changed=self._refresh_badge,
+            product_images_dir=self._config.product_images_dir,
+            company_logos_dir=self._config.company_logos_dir,
+        )
         return self._inventory_view
 
     def _make_reports_page(self) -> QWidget:

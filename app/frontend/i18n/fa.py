@@ -82,6 +82,8 @@ COLUMN_LABELS = {
 
 # --- Inventory view / scan ---------------------------------------------------
 PH_SCAN_SEARCH = "بارکد را اسکن کنید یا جستجو کنید…"
+PH_COL_FILTER = "فیلتر…"
+BTN_TOGGLE_FILTERS = "فیلتر ستون‌ها"
 MSG_PRODUCT_NOT_FOUND = "کالایی با این بارکد یافت نشد"
 WARN_LOW_STOCK = "موجودی کم"
 LBL_LOW_STOCK_BADGE = "کالای رو به اتمام: {count}"
@@ -90,6 +92,12 @@ MSG_NO_RESULTS = "نتیجه‌ای یافت نشد"
 TITLE_ADD_PRODUCT = "افزودن کالای جدید"
 TITLE_EDIT_PRODUCT = "ویرایش کالا"
 CONFIRM_DELETE_PRODUCT = "آیا از حذف کالای «{name}» مطمئن هستید؟"
+
+# --- Product detail popup ----------------------------------------------------
+TITLE_PRODUCT_DETAIL = "جزئیات کالا"
+LBL_PRODUCT_IMAGE = "تصویر کالا"
+LBL_COMPANY_LOGO = "لوگوی شرکت"
+MSG_NO_IMAGE = "تصویری موجود نیست"
 
 # --- Users view --------------------------------------------------------------
 TITLE_ADD_USER = "افزودن کاربر"

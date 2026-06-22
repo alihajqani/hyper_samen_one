@@ -119,3 +119,16 @@ class Role(enum.Enum):
   reports view; count surfaced on the main window.
 - **Barcode index:** an in-memory dict/Series (barcode → row) built from the DataFrame for O(1)
   scanner lookups.
+
+---
+
+## 4. Product / company images (optional)
+
+The product detail popup shows two pictures, both resolved from disk by filename:
+
+- **Product image:** `<PRODUCT_IMAGES_DIR>/<barcode>.<ext>` (default dir `data/product_images`).
+- **Company logo:** `<COMPANY_LOGOS_DIR>/<company name>.<ext>` (default dir `data/company_logos`).
+
+Supported extensions (probed in order): `.png .jpg .jpeg .webp .bmp .gif`. Matching on the file
+stem is case-insensitive. When no file is found a Persian "no image" placeholder is shown. Both
+folders are configurable via `.env` (`PRODUCT_IMAGES_DIR`, `COMPANY_LOGOS_DIR`).

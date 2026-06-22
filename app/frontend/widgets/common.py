@@ -30,6 +30,38 @@ def font_path() -> Path:
     return asset_path("app", "frontend", "assets", "Vazirmatn-Regular.ttf")
 
 
+# Image extensions probed (in order) when matching a product/company picture.
+_IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
+
+
+def find_image(directory: Path | str | None, stem: str | None) -> Path | None:
+    """Return the first existing ``<stem>.<ext>`` file in *directory*, else ``None``.
+
+    Used to resolve a product image by barcode or a company logo by company name.
+    Matching is case-insensitive on the file stem.
+    """
+    if not directory or not stem:
+        return None
+    stem = str(stem).strip()
+    if not stem:
+        return None
+    d = Path(directory)
+    if not d.is_dir():
+        return None
+    # Fast path: exact stem with a known extension.
+    for ext in _IMAGE_EXTS:
+        p = d / f"{stem}{ext}"
+        if p.exists():
+            return p
+    # Fallback: case-insensitive stem match over the directory.
+    lower = stem.casefold()
+    for child in d.iterdir():
+        if child.is_file() and child.stem.casefold() == lower \
+                and child.suffix.lower() in _IMAGE_EXTS:
+            return child
+    return None
+
+
 def show_info(parent: QWidget | None, text: str, title: str = fa.TITLE_INFO) -> None:
     QMessageBox.information(parent, title, text)
 

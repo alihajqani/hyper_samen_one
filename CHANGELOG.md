@@ -6,6 +6,19 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-23
+### Added
+- Per-column filtering in the inventory table: a filter row aligned under the headers
+  (toggleable), combinable with the global search/scan bar (`app/frontend/inventory_view.py`).
+- Click-to-sort headers and interactive, resizable, movable columns.
+- Product detail popup opened by double-clicking a row (`app/frontend/product_detail_dialog.py`):
+  shows every field plus a product image (matched by barcode) and a company logo (matched by
+  company name), with a Persian "no image" placeholder when a file is missing. Includes an Edit
+  shortcut for write-capable roles.
+- Two configurable image folders (`PRODUCT_IMAGES_DIR`, `COMPANY_LOGOS_DIR`) resolved next to the
+  executable, with `find_image()` extension probing in `app/frontend/widgets/common.py` and new
+  `Config.product_images_dir` / `Config.company_logos_dir` (`app/backend/config.py`).
+
 ## [1.1.2] - 2026-06-22
 ### Fixed
 - Segfault on Linux after login: closing the login window from within its own
@@ -126,7 +139,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `main.py` entry point with `--check` health-check mode.
 - Documentation: `CLAUDE.md`, `spec/`, and custom skills.
 
-[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.0.0...v1.1.0

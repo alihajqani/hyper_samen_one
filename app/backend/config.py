@@ -46,6 +46,8 @@ class Config:
     user_store_key: str
     inventory_file: Path
     user_store_file: Path
+    product_images_dir: Path
+    company_logos_dir: Path
     log_dir: Path
     log_level: str
 
@@ -67,6 +69,12 @@ def load_config() -> Config:
         user_store_key=os.getenv("USER_STORE_KEY", ""),
         inventory_file=_resolve(os.getenv("INVENTORY_FILE"), root / "data" / "samen.xlsx"),
         user_store_file=_resolve(os.getenv("USER_STORE_FILE"), root / "users.dat"),
+        product_images_dir=_resolve(
+            os.getenv("PRODUCT_IMAGES_DIR"), root / "data" / "product_images"
+        ),
+        company_logos_dir=_resolve(
+            os.getenv("COMPANY_LOGOS_DIR"), root / "data" / "company_logos"
+        ),
         log_dir=root,
         log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
     )
