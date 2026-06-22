@@ -14,6 +14,9 @@ from app.backend.models import Product
 
 logger = logging.getLogger("hyper_samen.inventory")
 
+IMPORT_MERGE = "MERGE"
+IMPORT_REPLACE = "REPLACE"
+
 
 class InventoryRepo:
     def __init__(self, excel: ExcelService):
@@ -76,3 +79,17 @@ class InventoryRepo:
     def delete(self, product: Product) -> None:
         self._excel.delete_product(product)
         self.load()
+
+    def import_from_excel(self, path, mode: str, password: str | None = None) -> dict:
+        """Bulk import from an external .xlsx. ``mode`` is MERGE or REPLACE."""
+        products = self._excel.read_external(path, password)
+        if not products:
+            raise ValueError("empty")
+        if mode == IMPORT_REPLACE:
+            total = self._excel.replace_all(products)
+            summary = {"mode": IMPORT_REPLACE, "total": total}
+        else:
+            updated, added = self._excel.bulk_upsert(products)
+            summary = {"mode": IMPORT_MERGE, "updated": updated, "added": added}
+        self.load()
+        return summary

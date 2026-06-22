@@ -7,7 +7,15 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QLineEdit, QMessageBox, QWidget
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.frontend.i18n import fa
 
@@ -118,6 +126,31 @@ class PasswordEdit(QLineEdit):
         self._action.setToolTip(
             fa.TIP_HIDE_PASSWORD if self._revealed else fa.TIP_SHOW_PASSWORD
         )
+
+
+def prompt_password(parent: QWidget | None, title: str, hint: str = "") -> str | None:
+    """Modal password prompt with an eye icon. Returns the text, or None if cancelled."""
+    dlg = QDialog(parent)
+    dlg.setWindowTitle(title)
+    dlg.setMinimumWidth(340)
+    lay = QVBoxLayout(dlg)
+    if hint:
+        lbl = QLabel(hint)
+        lbl.setObjectName("subtitle")
+        lbl.setWordWrap(True)
+        lay.addWidget(lbl)
+    edit = PasswordEdit(placeholder=fa.LBL_PASSWORD)
+    lay.addWidget(edit)
+    buttons = QDialogButtonBox()
+    ok = buttons.addButton(fa.BTN_OK, QDialogButtonBox.AcceptRole)
+    buttons.addButton(fa.BTN_CANCEL, QDialogButtonBox.RejectRole)
+    ok.clicked.connect(dlg.accept)
+    buttons.rejected.connect(dlg.reject)
+    edit.returnPressed.connect(dlg.accept)
+    lay.addWidget(buttons)
+    if dlg.exec():
+        return edit.text()
+    return None
 
 
 def confirm(parent: QWidget | None, text: str, title: str = fa.TITLE_CONFIRM) -> bool:

@@ -232,9 +232,13 @@ class InventoryView(QWidget):
             self._del_btn = QPushButton(fa.BTN_DELETE)
             self._del_btn.setObjectName("danger")
             self._del_btn.clicked.connect(self._on_delete)
+            self._import_btn = QPushButton(fa.BTN_IMPORT)
+            self._import_btn.setObjectName("ghost")
+            self._import_btn.clicked.connect(self._on_import)
             top.addWidget(self._add_btn)
             top.addWidget(self._edit_btn)
             top.addWidget(self._del_btn)
+            top.addWidget(self._import_btn)
 
         self._filter_btn = QPushButton(fa.BTN_TOGGLE_FILTERS)
         self._filter_btn.setObjectName("ghost")
@@ -336,6 +340,31 @@ class InventoryView(QWidget):
             return
         self._after_change()
         show_info(self, fa.MSG_DELETED)
+
+    def _on_import(self) -> None:
+        from app.frontend.import_dialog import ImportDialog
+        from app.backend.inventory_repo import IMPORT_REPLACE
+
+        dlg = ImportDialog(self)
+        if not dlg.exec():
+            return
+        path, mode, password = dlg.values()
+        if mode == IMPORT_REPLACE and not confirm(self, fa.CONFIRM_IMPORT_REPLACE):
+            return
+        try:
+            summary = self._repo.import_from_excel(path, mode, password)
+        except ValueError:
+            show_error(self, fa.ERR_IMPORT_EMPTY)
+            return
+        except Exception as exc:  # noqa: BLE001
+            show_error(self, fa.ERR_GENERIC.format(detail=exc))
+            return
+        self._after_change()
+        if summary["mode"] == IMPORT_REPLACE:
+            show_info(self, fa.MSG_IMPORT_REPLACE_DONE.format(total=summary["total"]))
+        else:
+            show_info(self, fa.MSG_IMPORT_MERGE_DONE.format(
+                updated=summary["updated"], added=summary["added"]))
 
     # -- behavior -------------------------------------------------------------
 

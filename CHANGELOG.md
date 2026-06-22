@@ -6,6 +6,20 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-23
+### Added
+- Bulk import from an external Excel file (`app/frontend/import_dialog.py`), with two modes:
+  **Merge** (update existing rows by barcode, append new ones) and **Replace** (clear the canonical
+  sheet and write the imported rows). The source file may be plain or password-protected. Backend:
+  `ExcelService.read_external` / `replace_all` / `bulk_upsert` and `InventoryRepo.import_from_excel`
+  (single decrypt/encrypt pass, all behind `_require_writable`). "افزودن بالک" button in the
+  inventory toolbar (write roles only); Replace asks for confirmation.
+- Password-locked, role-gated export: the low-stock export is now visible only to Admin/Privileged
+  (`session.can_write`), prompts for the current user's password (verified against their bcrypt
+  hash), and encrypts the produced `.xlsx` with that password via `encrypt_workbook`
+  (`app/backend/excel_service.py`). Reusable `prompt_password` helper added to
+  `app/frontend/widgets/common.py`.
+
 ## [1.3.0] - 2026-06-23
 ### Added
 - Password-reveal eye icon: a reusable `PasswordEdit` widget (runtime-drawn icon, no bundled
@@ -155,7 +169,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `main.py` entry point with `--check` health-check mode.
 - Documentation: `CLAUDE.md`, `spec/`, and custom skills.
 
-[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.1...v1.1.2

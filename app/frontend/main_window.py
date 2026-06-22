@@ -205,7 +205,7 @@ class MainWindow(QMainWindow):
             return _placeholder()
         from app.frontend.reports_view import ReportsView
 
-        self._reports_view = ReportsView(self._repo)
+        self._reports_view = ReportsView(self._repo, self._session)
         return self._reports_view
 
     def _make_users_page(self) -> QWidget:

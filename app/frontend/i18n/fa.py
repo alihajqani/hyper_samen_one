@@ -19,6 +19,8 @@ BTN_LOGOUT = "خروج"
 BTN_CREATE = "ایجاد"
 BTN_CLOSE = "بستن"
 BTN_EXPORT = "خروجی گرفتن"
+BTN_IMPORT = "افزودن بالک"
+BTN_OK = "تأیید"
 
 CONFIRM_YES = "بله"
 CONFIRM_NO = "خیر"
@@ -130,10 +132,30 @@ BTN_TOGGLE_ACTIVE = "فعال/غیرفعال"
 CONFIRM_DELETE_USER = "آیا از حذف کاربر «{username}» مطمئن هستید؟"
 TITLE_RESET_PASSWORD = "تغییر رمز عبور کاربر «{username}»"
 
-# --- Reports -----------------------------------------------------------------
+# --- Reports / export --------------------------------------------------------
 REPORT_LOW_STOCK_TITLE = "گزارش کالاهای رو به اتمام"
 REPORT_EMPTY = "هیچ کالای رو به اتمامی وجود ندارد"
 EXPORT_DONE = "گزارش با موفقیت ذخیره شد:\n{path}"
+TITLE_EXPORT_PASSWORD = "قفل خروجی"
+EXPORT_PASSWORD_HINT = (
+    "فایل خروجی با رمز عبور شما قفل می‌شود. برای تأیید، رمز عبور کاربری فعلی را وارد کنید."
+)
+ERR_WRONG_PASSWORD = "رمز عبور نادرست است."
+
+# --- Bulk import -------------------------------------------------------------
+TITLE_IMPORT = "افزودن گروهی از اکسل"
+IMPORT_CHOOSE_FILE = "انتخاب فایل اکسل…"
+IMPORT_NO_FILE = "فایلی انتخاب نشده است"
+IMPORT_SELECTED = "فایل انتخاب‌شده: {name}"
+LBL_IMPORT_MODE = "نحوهٔ افزودن"
+IMPORT_MODE_MERGE = "ادغام (به‌روزرسانی بر اساس بارکد و افزودن موارد جدید)"
+IMPORT_MODE_REPLACE = "جایگزینی کامل (حذف کل داده‌های فعلی)"
+LBL_IMPORT_PASSWORD = "رمز فایل ورودی (اگر رمزدار است)"
+CONFIRM_IMPORT_REPLACE = "همهٔ داده‌های فعلی حذف و با فایل انتخابی جایگزین می‌شوند. ادامه می‌دهید؟"
+MSG_IMPORT_MERGE_DONE = "ادغام انجام شد: {updated} به‌روزرسانی، {added} مورد افزوده شد."
+MSG_IMPORT_REPLACE_DONE = "جایگزینی انجام شد: {total} کالا وارد شد."
+ERR_IMPORT_EMPTY = "فایل انتخابی هیچ کالای معتبری ندارد."
+ERR_IMPORT_NO_FILE = "لطفاً ابتدا یک فایل اکسل انتخاب کنید."
 
 # --- Validation / feedback ---------------------------------------------------
 ERR_REQUIRED = "این فیلد الزامی است"

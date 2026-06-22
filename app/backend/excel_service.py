@@ -24,7 +24,7 @@ import msoffcrypto
 import openpyxl
 from msoffcrypto.format.ooxml import OOXMLFile
 
-from app.backend.models import INVENTORY_FIELDS, Product
+from app.backend.models import INVENTORY_FIELDS, Product, _coerce
 
 logger = logging.getLogger("hyper_samen.excel")
 
@@ -113,9 +113,8 @@ class ExcelService:
 
     # -- public API -----------------------------------------------------------
 
-    def read_products(self) -> list[Product]:
-        wb = self._load_workbook(data_only=True)
-        ws = self._sheet(wb)
+    def _parse_sheet(self, ws) -> list[Product]:
+        """Read products from a worksheet (canonical column order, after the header)."""
         header_idx = self._header_row_index(ws)
         products: list[Product] = []
         for r, row in enumerate(
@@ -130,8 +129,91 @@ class ExcelService:
             if not product.name:
                 continue
             products.append(product)
+        return products
+
+    def read_products(self) -> list[Product]:
+        wb = self._load_workbook(data_only=True)
+        ws = self._sheet(wb)
+        products = self._parse_sheet(ws)
         logger.info("Loaded inventory: %d products from sheet '%s'", len(products), ws.title)
         return products
+
+    def read_external(self, path: Path, password: str | None = None) -> list[Product]:
+        """Parse products from an external .xlsx (plain, or encrypted with *password*)."""
+        path = Path(path)
+        if not path.exists():
+            raise ExcelError(f"فایل ورودی یافت نشد: {path}")
+        with open(path, "rb") as f:
+            try:
+                office = msoffcrypto.OfficeFile(f)
+                is_encrypted = office.is_encrypted()
+            except Exception:  # noqa: BLE001 - not an encrypted OLE container → plain xlsx
+                is_encrypted = False
+            if is_encrypted:
+                try:
+                    office.load_key(password=password or "")
+                    buf = io.BytesIO()
+                    office.decrypt(buf)
+                except Exception as exc:  # noqa: BLE001
+                    raise ExcelError("فایل ورودی رمزدار است؛ رمز واردشده نادرست است.") from exc
+                buf.seek(0)
+                wb = openpyxl.load_workbook(buf, data_only=True)
+            else:
+                try:
+                    wb = openpyxl.load_workbook(path, data_only=True)
+                except Exception as exc:  # noqa: BLE001
+                    raise ExcelError("فایل ورودی معتبر نیست یا قابل خواندن نیست.") from exc
+        ws = self._sheet(wb)
+        products = self._parse_sheet(ws)
+        logger.info("Read %d products from external file '%s'", len(products), path.name)
+        return products
+
+    def replace_all(self, products: list[Product]) -> int:
+        """Replace every data row of the canonical sheet with *products*."""
+        self._require_writable()
+        wb = self._load_workbook(data_only=False)
+        ws = self._sheet(wb)
+        header_idx = self._header_row_index(ws)
+        if ws.max_row > header_idx:
+            ws.delete_rows(header_idx + 1, ws.max_row - header_idx)
+        for i, p in enumerate(products, start=header_idx + 1):
+            p.row = i
+            self._write_row(ws, p)
+        plain = io.BytesIO(); wb.save(plain)
+        self._encrypt_and_save(plain)
+        logger.info("Replaced inventory with %d products", len(products))
+        return len(products)
+
+    def bulk_upsert(self, products: list[Product]) -> tuple[int, int]:
+        """Update rows matching by barcode, append the rest. Returns (updated, added)."""
+        self._require_writable()
+        wb = self._load_workbook(data_only=False)
+        ws = self._sheet(wb)
+        header_idx = self._header_row_index(ws)
+        bc_col = INVENTORY_FIELDS.index("barcode") + 1
+        existing: dict[str, int] = {}
+        for r in range(header_idx + 1, ws.max_row + 1):
+            bc = _coerce("barcode", ws.cell(row=r, column=bc_col).value)
+            if bc:
+                existing[bc] = r
+        next_row = ws.max_row + 1
+        updated = added = 0
+        for p in products:
+            if p.barcode and p.barcode in existing:
+                p.row = existing[p.barcode]
+                self._write_row(ws, p)
+                updated += 1
+            else:
+                p.row = next_row
+                self._write_row(ws, p)
+                if p.barcode:
+                    existing[p.barcode] = next_row
+                next_row += 1
+                added += 1
+        plain = io.BytesIO(); wb.save(plain)
+        self._encrypt_and_save(plain)
+        logger.info("Bulk upsert: %d updated, %d added", updated, added)
+        return updated, added
 
     def _require_writable(self) -> None:
         if not self._writable:
@@ -174,6 +256,21 @@ class ExcelService:
         plain = io.BytesIO(); wb.save(plain)
         self._encrypt_and_save(plain)
         logger.info("Deleted product at row %d: %s", product.row, product.name)
+
+
+def encrypt_workbook(wb, path: Path, password: str) -> None:
+    """Save an openpyxl workbook to *path*, password-encrypted (msoffcrypto)."""
+    plain = io.BytesIO()
+    wb.save(plain)
+    plain.seek(0)
+    enc = io.BytesIO()
+    OOXMLFile(plain).encrypt(password, enc)
+    enc.seek(0)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(enc.read())
+    logger.info("Encrypted workbook written: %s", path)
 
 
 def create_excel_service(config, writable: bool) -> ExcelService:
