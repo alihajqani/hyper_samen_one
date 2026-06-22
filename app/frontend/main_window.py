@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.__version__ import __version__
+from app.__version__ import __developer__, __version__
 from app.backend.auth import Session
 from app.backend.excel_service import ExcelError, create_excel_service
 from app.backend.inventory_repo import InventoryRepo
@@ -146,6 +146,7 @@ class MainWindow(QMainWindow):
         self._add_page("reports", fa.NAV_REPORTS, self._make_reports_page())
         if self._session.can_manage_users:
             self._add_page("users", fa.NAV_USERS, self._make_users_page())
+            self._add_page("logs", fa.NAV_LOGS, self._make_logs_page())
 
     def _add_page(self, key: str, label: str, widget: QWidget) -> None:
         self._pages[key] = widget
@@ -184,6 +185,10 @@ class MainWindow(QMainWindow):
         version.setObjectName("subtitle")
         cl.addWidget(version)
 
+        developer = QLabel(fa.LBL_DEVELOPER.format(name=__developer__))
+        developer.setObjectName("subtitle")
+        cl.addWidget(developer)
+
         lay.addWidget(card)
         return page
 
@@ -213,3 +218,9 @@ class MainWindow(QMainWindow):
 
         self._users_view = UsersView(self._auth.store, self._session.user.username)
         return self._users_view
+
+    def _make_logs_page(self) -> QWidget:
+        from app.frontend.logs_view import LogsView
+
+        self._logs_view = LogsView(self._config.log_dir, self._session)
+        return self._logs_view

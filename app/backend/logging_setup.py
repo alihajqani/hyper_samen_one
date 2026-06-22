@@ -20,6 +20,15 @@ def jalali_log_name(when: jdatetime.datetime | None = None) -> str:
     return f"{when.year:04d}{when.month:02d}{when.day:02d}.log"
 
 
+def list_log_files(log_dir: Path) -> list[Path]:
+    """Return Jalali-named ``*.log`` files in *log_dir*, newest first."""
+    d = Path(log_dir)
+    if not d.is_dir():
+        return []
+    files = [p for p in d.glob("*.log") if p.stem.isdigit() and len(p.stem) == 8]
+    return sorted(files, key=lambda p: p.stem, reverse=True)
+
+
 class JalaliDailyFileHandler(logging.Handler):
     """A file handler that writes to a Jalali-dated file, one per day.
 

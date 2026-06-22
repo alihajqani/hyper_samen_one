@@ -15,9 +15,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.__version__ import __developer__, __version__
 from app.backend.auth import AuthError, AuthService
 from app.backend.user_store import UserStoreError
 from app.frontend.i18n import fa
+from app.frontend.utils_fa import to_persian_digits
 from app.frontend.widgets.common import PasswordEdit, logo_path, show_error, show_info
 
 logger = logging.getLogger("hyper_samen.ui.login")
@@ -115,6 +117,15 @@ class LoginWindow(QWidget):
         self.password.returnPressed.connect(self._on_submit)
         self.password2.returnPressed.connect(self._on_submit)
         self.recovery.returnPressed.connect(self._on_submit)
+
+        footer = QLabel(
+            f"{fa.LBL_VERSION.format(version=to_persian_digits(__version__))}"
+            f"  ·  {fa.LBL_DEVELOPER.format(name=__developer__)}"
+        )
+        footer.setObjectName("subtitle")
+        footer.setAlignment(Qt.AlignCenter)
+        footer.setWordWrap(True)
+        lay.addWidget(footer)
 
         outer.addWidget(card)
 

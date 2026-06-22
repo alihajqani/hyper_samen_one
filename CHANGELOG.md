@@ -6,6 +6,15 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-23
+### Added
+- Admin-only log viewer (`app/frontend/logs_view.py`), reachable from a new "گزارش رویدادها" nav
+  entry and **locked behind the admin's password**: the contents are revealed only after the
+  password is verified against the admin's bcrypt hash. Lists the Jalali-named `*.log` files (via
+  new `logging_setup.list_log_files`) and shows the selected file read-only (tailing large files).
+- Developer attribution: `__developer__ = "سرباز وظیفه پارسا هدایت نیا"` in `app/__version__.py`,
+  shown alongside the version on the home card and in a login-screen footer.
+
 ## [1.4.0] - 2026-06-23
 ### Added
 - Bulk import from an external Excel file (`app/frontend/import_dialog.py`), with two modes:
@@ -169,7 +178,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `main.py` entry point with `--check` health-check mode.
 - Documentation: `CLAUDE.md`, `spec/`, and custom skills.
 
-[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...v1.2.0

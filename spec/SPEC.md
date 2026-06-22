@@ -93,6 +93,9 @@ low-stock alerts, and Persian (Jalali) daily logging.
 - Rollover happens at local midnight (date checked on emit).
 - Logged: app start/stop, auth events, inventory create/update/delete, Excel open/save,
   errors with stack traces. **No secrets in logs.**
+- An **admin-only log viewer** (nav: "گزارش رویدادها") lists these files and shows them read-only.
+  It is **locked behind the admin's password** — contents are revealed only after the password is
+  re-verified against the admin's bcrypt hash.
 
 ## 10. Localization (Persian / RTL)
 
