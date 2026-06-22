@@ -31,6 +31,7 @@ TITLE_WARNING = "هشدار"
 LBL_USERNAME = "نام کاربری"
 LBL_PASSWORD = "رمز عبور"
 LBL_PASSWORD_CONFIRM = "تکرار رمز عبور"
+LBL_NEW_PASSWORD = "رمز عبور جدید"
 LOGIN_TITLE = "ورود به سامانه"
 SETUP_ADMIN_TITLE = "ایجاد مدیر اولیه"
 SETUP_ADMIN_HINT = "هیچ کاربری وجود ندارد. لطفاً نخستین حساب مدیر را بسازید."
@@ -39,6 +40,25 @@ MSG_USER_DISABLED = "این کاربر غیرفعال است"
 MSG_PASSWORD_MISMATCH = "رمز عبور و تکرار آن یکسان نیستند"
 MSG_FILL_ALL_FIELDS = "لطفاً همهٔ فیلدها را پر کنید"
 MSG_WELCOME = "خوش آمدید"
+TIP_SHOW_PASSWORD = "نمایش رمز عبور"
+TIP_HIDE_PASSWORD = "پنهان کردن رمز عبور"
+
+# --- Forgot password / recovery (master) code --------------------------------
+LINK_FORGOT_PASSWORD = "فراموشی رمز عبور"
+TITLE_FORGOT_PASSWORD = "بازیابی رمز عبور مدیر"
+FORGOT_PASSWORD_HINT = (
+    "برای بازنشانی رمز عبور مدیر اصلی، شاه‌کلید بازیابی را وارد کنید و سپس رمز عبور جدید را تعیین کنید."
+)
+LBL_RECOVERY_CODE = "شاه‌کلید بازیابی"
+LBL_RECOVERY_CODE_SETUP = "شاه‌کلید بازیابی (برای فراموشی رمز)"
+SETUP_RECOVERY_HINT = (
+    "این شاه‌کلید را در جای امن نگه دارید؛ تنها راه بازیابی رمز مدیر در صورت فراموشی است."
+)
+MSG_RECOVERY_SUCCESS = "رمز عبور مدیر «{username}» با موفقیت بازنشانی شد. اکنون می‌توانید وارد شوید."
+ERR_RECOVERY_CODE_WRONG = "شاه‌کلید بازیابی نادرست است."
+TITLE_SET_RECOVERY = "تنظیم شاه‌کلید بازیابی"
+BTN_SET_RECOVERY = "شاه‌کلید بازیابی"
+MSG_RECOVERY_SET = "شاه‌کلید بازیابی ذخیره شد."
 
 # --- Navigation --------------------------------------------------------------
 LBL_VERSION = "نسخه {version}"

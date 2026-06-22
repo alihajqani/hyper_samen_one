@@ -48,8 +48,10 @@ class AuthService:
     def needs_initial_admin(self) -> bool:
         return not self._store.has_users()
 
-    def create_initial_admin(self, username: str, password: str) -> Session:
-        user = self._store.create_initial_admin(username, password)
+    def create_initial_admin(
+        self, username: str, password: str, recovery_code: str | None = None
+    ) -> Session:
+        user = self._store.create_initial_admin(username, password, recovery_code)
         logger.info("Initial admin created: %s", username)
         return Session(user=user)
 

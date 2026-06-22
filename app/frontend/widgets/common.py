@@ -5,7 +5,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import QLineEdit, QMessageBox, QWidget
 
 from app.frontend.i18n import fa
 
@@ -72,6 +74,50 @@ def show_error(parent: QWidget | None, text: str, title: str = fa.TITLE_ERROR) -
 
 def show_warning(parent: QWidget | None, text: str, title: str = fa.TITLE_WARNING) -> None:
     QMessageBox.warning(parent, title, text)
+
+
+def _eye_icon(revealed: bool) -> QIcon:
+    """Draw a small eye icon at runtime (no bundled asset). Slashed when revealed."""
+    size = 18
+    pm = QPixmap(size, size)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    pen = QPen(QColor("#546e7a"))
+    pen.setWidth(2)
+    pen.setCapStyle(Qt.RoundCap)
+    p.setPen(pen)
+    # Almond eye outline (two arcs) + pupil.
+    p.drawArc(2, 4, 14, 10, 0, 180 * 16)
+    p.drawArc(2, 4, 14, 10, 180 * 16, 180 * 16)
+    p.setBrush(QColor("#546e7a"))
+    p.drawEllipse(6, 6, 6, 6)
+    if revealed:
+        p.drawLine(3, 15, 15, 3)  # slash = currently visible, click to hide
+    p.end()
+    return QIcon(pm)
+
+
+class PasswordEdit(QLineEdit):
+    """A password field with a trailing eye icon that toggles visibility."""
+
+    def __init__(self, parent: QWidget | None = None, placeholder: str = ""):
+        super().__init__(parent)
+        self.setEchoMode(QLineEdit.Password)
+        if placeholder:
+            self.setPlaceholderText(placeholder)
+        self._revealed = False
+        self._action = self.addAction(_eye_icon(False), QLineEdit.TrailingPosition)
+        self._action.setToolTip(fa.TIP_SHOW_PASSWORD)
+        self._action.triggered.connect(self._toggle)
+
+    def _toggle(self) -> None:
+        self._revealed = not self._revealed
+        self.setEchoMode(QLineEdit.Normal if self._revealed else QLineEdit.Password)
+        self._action.setIcon(_eye_icon(self._revealed))
+        self._action.setToolTip(
+            fa.TIP_HIDE_PASSWORD if self._revealed else fa.TIP_SHOW_PASSWORD
+        )
 
 
 def confirm(parent: QWidget | None, text: str, title: str = fa.TITLE_CONFIRM) -> bool:

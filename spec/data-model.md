@@ -75,6 +75,7 @@ A JSON document, **Fernet-encrypted** at rest (key = `USER_STORE_KEY` from `.env
 ```json
 {
   "version": 1,
+  "recovery_hash": "$2b$12$....",
   "users": [
     {
       "username": "admin",
@@ -86,6 +87,11 @@ A JSON document, **Fernet-encrypted** at rest (key = `USER_STORE_KEY` from `.env
   ]
 }
 ```
+
+`recovery_hash` is the **bcrypt hash of the master recovery code** (forgot-password). It is set
+when creating the initial admin (or later from the Users view) and is never stored in clear text —
+the code itself lives only in the operator's memory. It is deliberately kept inside the encrypted
+`users.dat` rather than `.env`.
 
 ### Fields
 | Field | Type | Notes |
@@ -105,10 +111,14 @@ class Role(enum.Enum):
 ```
 
 ### Rules
-- First run with no users → force-create the initial `ADMIN`.
+- First run with no users → force-create the initial `ADMIN` (and an optional recovery code).
 - Admin can create only `PRIVILEGED` or `READ_ONLY` users via the UI (additional admins, if
   allowed, is a product decision — default: admin-managed).
+- **Password policy** (`app/backend/validators.py`): at least 8 characters and at least one
+  lowercase Latin letter; enforced on create / change / recovery reset.
 - Password changes re-hash with bcrypt.
+- **Forgot password:** entering the correct master recovery code resets the *primary* admin's
+  password (earliest-created `ADMIN`).
 - The store file is gitignored and never logged.
 
 ---

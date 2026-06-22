@@ -6,6 +6,22 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-23
+### Added
+- Password-reveal eye icon: a reusable `PasswordEdit` widget (runtime-drawn icon, no bundled
+  asset) used across login, add-user, reset-password, recovery, and forgot-password fields
+  (`app/frontend/widgets/common.py`).
+- Password policy (`app/backend/validators.py`): minimum 8 characters and at least one lowercase
+  Latin letter, enforced on user create, password change, and recovery reset.
+- Forgot-password flow gated by a master recovery code (`app/frontend/forgot_password_dialog.py`):
+  the code's **bcrypt hash is stored inside the Fernet-encrypted `users.dat`** (never in clear text
+  or `.env`); the correct code lets the user set a new password for the primary admin account.
+  The initial-admin setup collects the recovery code, and an admin can set/update it from the Users
+  view ("شاه‌کلید بازیابی").
+### Changed
+- Login screen: the "هایپرمارکت ثامن" brand text now sits at the top of the card, with the card
+  aligned higher on the page.
+
 ## [1.2.0] - 2026-06-23
 ### Added
 - Per-column filtering in the inventory table: a filter row aligned under the headers
@@ -139,7 +155,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - `main.py` entry point with `--check` health-check mode.
 - Documentation: `CLAUDE.md`, `spec/`, and custom skills.
 
-[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/alihajqani/hyper_samen_one/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/alihajqani/hyper_samen_one/compare/v1.1.0...v1.1.1

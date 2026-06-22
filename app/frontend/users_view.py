@@ -25,7 +25,7 @@ from app.backend.models import Role
 from app.backend.user_store import UserStore, UserStoreError
 from app.frontend.i18n import fa
 from app.frontend.utils_fa import to_persian_digits
-from app.frontend.widgets.common import confirm, show_error, show_info
+from app.frontend.widgets.common import PasswordEdit, confirm, show_error, show_info
 
 logger = logging.getLogger("hyper_samen.ui.users")
 
@@ -37,8 +37,8 @@ class AddUserDialog(QDialog):
         self.setMinimumWidth(360)
         form = QFormLayout()
         self.username = QLineEdit()
-        self.password = QLineEdit(); self.password.setEchoMode(QLineEdit.Password)
-        self.password2 = QLineEdit(); self.password2.setEchoMode(QLineEdit.Password)
+        self.password = PasswordEdit()
+        self.password2 = PasswordEdit()
         self.role = QComboBox()
         for r in Role.assignable_by_admin():
             self.role.addItem(r.fa, r)
@@ -72,8 +72,8 @@ class PasswordDialog(QDialog):
         self.setWindowTitle(fa.TITLE_RESET_PASSWORD.format(username=username))
         self.setMinimumWidth(340)
         form = QFormLayout()
-        self.password = QLineEdit(); self.password.setEchoMode(QLineEdit.Password)
-        self.password2 = QLineEdit(); self.password2.setEchoMode(QLineEdit.Password)
+        self.password = PasswordEdit()
+        self.password2 = PasswordEdit()
         form.addRow(fa.LBL_PASSWORD, self.password)
         form.addRow(fa.LBL_PASSWORD_CONFIRM, self.password2)
         buttons = QDialogButtonBox()
@@ -92,6 +92,42 @@ class PasswordDialog(QDialog):
 
     def value(self) -> str:
         return self.password.text()
+
+
+class RecoveryCodeDialog(QDialog):
+    """Set or update the master recovery code (for forgot-password)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(fa.TITLE_SET_RECOVERY)
+        self.setMinimumWidth(360)
+        form = QFormLayout()
+        self.code = PasswordEdit()
+        self.code2 = PasswordEdit()
+        form.addRow(fa.LBL_RECOVERY_CODE, self.code)
+        form.addRow(fa.LBL_PASSWORD_CONFIRM, self.code2)
+        buttons = QDialogButtonBox()
+        ok = buttons.addButton(fa.BTN_SAVE, QDialogButtonBox.AcceptRole)
+        buttons.addButton(fa.BTN_CANCEL, QDialogButtonBox.RejectRole)
+        ok.clicked.connect(self._on_accept)
+        buttons.rejected.connect(self.reject)
+        hint = QLabel(fa.SETUP_RECOVERY_HINT)
+        hint.setObjectName("subtitle")
+        hint.setWordWrap(True)
+        lay = QVBoxLayout(self)
+        lay.addLayout(form)
+        lay.addWidget(hint)
+        lay.addWidget(buttons)
+
+    def _on_accept(self) -> None:
+        if not self.code.text():
+            show_error(self, fa.MSG_FILL_ALL_FIELDS); return
+        if self.code.text() != self.code2.text():
+            show_error(self, fa.MSG_PASSWORD_MISMATCH); return
+        self.accept()
+
+    def value(self) -> str:
+        return self.code.text()
 
 
 class UsersView(QWidget):
@@ -117,9 +153,11 @@ class UsersView(QWidget):
         self._pw_btn.clicked.connect(self._on_reset_pw)
         self._toggle_btn = QPushButton(fa.BTN_TOGGLE_ACTIVE); self._toggle_btn.setObjectName("ghost")
         self._toggle_btn.clicked.connect(self._on_toggle)
+        self._recovery_btn = QPushButton(fa.BTN_SET_RECOVERY); self._recovery_btn.setObjectName("ghost")
+        self._recovery_btn.clicked.connect(self._on_set_recovery)
         self._del_btn = QPushButton(fa.BTN_DELETE); self._del_btn.setObjectName("danger")
         self._del_btn.clicked.connect(self._on_delete)
-        for b in (self._add_btn, self._pw_btn, self._toggle_btn, self._del_btn):
+        for b in (self._add_btn, self._pw_btn, self._toggle_btn, self._recovery_btn, self._del_btn):
             top.addWidget(b)
         lay.addLayout(top)
 
@@ -182,6 +220,16 @@ class UsersView(QWidget):
         except UserStoreError as exc:
             show_error(self, str(exc)); return
         show_info(self, fa.MSG_SAVED)
+
+    def _on_set_recovery(self) -> None:
+        dlg = RecoveryCodeDialog(self)
+        if not dlg.exec():
+            return
+        try:
+            self._store.set_recovery_code(dlg.value())
+        except UserStoreError as exc:
+            show_error(self, str(exc)); return
+        show_info(self, fa.MSG_RECOVERY_SET)
 
     def _on_toggle(self) -> None:
         username = self._selected_username()

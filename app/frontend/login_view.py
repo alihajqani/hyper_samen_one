@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 from app.backend.auth import AuthError, AuthService
 from app.backend.user_store import UserStoreError
 from app.frontend.i18n import fa
-from app.frontend.widgets.common import logo_path, show_error
+from app.frontend.widgets.common import PasswordEdit, logo_path, show_error, show_info
 
 logger = logging.getLogger("hyper_samen.ui.login")
 
@@ -37,15 +37,21 @@ class LoginWindow(QWidget):
 
     def _build(self) -> None:
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(40, 30, 40, 40)
-        outer.setAlignment(Qt.AlignCenter)
+        outer.setContentsMargins(40, 18, 40, 40)
+        outer.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 
         card = QFrame()
         card.setObjectName("card")
         card.setFixedWidth(360)
         lay = QVBoxLayout(card)
-        lay.setContentsMargins(28, 28, 28, 28)
+        lay.setContentsMargins(28, 22, 28, 24)
         lay.setSpacing(12)
+
+        # Brand name first, so "هایپرمارکت ثامن" sits at the very top of the card.
+        brand = QLabel(fa.APP_SHORT)
+        brand.setObjectName("title")
+        brand.setAlignment(Qt.AlignCenter)
+        lay.addWidget(brand)
 
         # logo
         if logo_path().exists():
@@ -56,39 +62,59 @@ class LoginWindow(QWidget):
             lay.addWidget(logo)
 
         title = QLabel(fa.SETUP_ADMIN_TITLE if self._setup_mode else fa.LOGIN_TITLE)
-        title.setObjectName("title")
+        title.setObjectName("subtitle")
         title.setAlignment(Qt.AlignCenter)
         lay.addWidget(title)
 
-        subtitle = QLabel(fa.SETUP_ADMIN_HINT if self._setup_mode else fa.APP_SHORT)
-        subtitle.setObjectName("subtitle")
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setWordWrap(True)
-        lay.addWidget(subtitle)
+        if self._setup_mode:
+            hint = QLabel(fa.SETUP_ADMIN_HINT)
+            hint.setObjectName("subtitle")
+            hint.setAlignment(Qt.AlignCenter)
+            hint.setWordWrap(True)
+            lay.addWidget(hint)
 
         self.username = QLineEdit()
         self.username.setPlaceholderText(fa.LBL_USERNAME)
         lay.addWidget(self.username)
 
-        self.password = QLineEdit()
-        self.password.setPlaceholderText(fa.LBL_PASSWORD)
-        self.password.setEchoMode(QLineEdit.Password)
+        self.password = PasswordEdit(placeholder=fa.LBL_PASSWORD)
         lay.addWidget(self.password)
 
-        self.password2 = QLineEdit()
-        self.password2.setPlaceholderText(fa.LBL_PASSWORD_CONFIRM)
-        self.password2.setEchoMode(QLineEdit.Password)
+        self.password2 = PasswordEdit(placeholder=fa.LBL_PASSWORD_CONFIRM)
         self.password2.setVisible(self._setup_mode)
         lay.addWidget(self.password2)
+
+        # Recovery (master) code — only collected when creating the initial admin.
+        self.recovery = PasswordEdit(placeholder=fa.LBL_RECOVERY_CODE_SETUP)
+        self.recovery.setVisible(self._setup_mode)
+        lay.addWidget(self.recovery)
+        if self._setup_mode:
+            rec_hint = QLabel(fa.SETUP_RECOVERY_HINT)
+            rec_hint.setObjectName("subtitle")
+            rec_hint.setWordWrap(True)
+            lay.addWidget(rec_hint)
 
         self.submit = QPushButton(fa.BTN_CREATE if self._setup_mode else fa.BTN_LOGIN)
         self.submit.clicked.connect(self._on_submit)
         lay.addWidget(self.submit)
 
+        # Forgot-password link — only when a recovery code has been configured.
+        if not self._setup_mode and self._auth.store.has_recovery_code():
+            self.forgot = QPushButton(fa.LINK_FORGOT_PASSWORD)
+            self.forgot.setFlat(True)
+            self.forgot.setCursor(Qt.PointingHandCursor)
+            self.forgot.setStyleSheet(
+                "QPushButton { background: transparent; border: none; color: #1565c0; }"
+                "QPushButton:hover { text-decoration: underline; }"
+            )
+            self.forgot.clicked.connect(self._on_forgot)
+            lay.addWidget(self.forgot)
+
         # Enter submits.
         self.username.returnPressed.connect(self._on_submit)
         self.password.returnPressed.connect(self._on_submit)
         self.password2.returnPressed.connect(self._on_submit)
+        self.recovery.returnPressed.connect(self._on_submit)
 
         outer.addWidget(card)
 
@@ -103,10 +129,19 @@ class LoginWindow(QWidget):
                 if password != self.password2.text():
                     show_error(self, fa.MSG_PASSWORD_MISMATCH)
                     return
-                session = self._auth.create_initial_admin(username, password)
+                session = self._auth.create_initial_admin(
+                    username, password, self.recovery.text() or None
+                )
             else:
                 session = self._auth.login(username, password)
         except (AuthError, UserStoreError) as exc:
             show_error(self, str(exc))
             return
         self.logged_in.emit(session)
+
+    def _on_forgot(self) -> None:
+        from app.frontend.forgot_password_dialog import ForgotPasswordDialog
+
+        dlg = ForgotPasswordDialog(self._auth, self)
+        if dlg.exec():
+            show_info(self, fa.MSG_RECOVERY_SUCCESS.format(username=dlg.admin_username))

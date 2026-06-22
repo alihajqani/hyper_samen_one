@@ -16,6 +16,7 @@ import jdatetime
 from cryptography.fernet import Fernet, InvalidToken
 
 from app.backend.models import Role, User
+from app.backend.validators import PolicyError, validate_password, validate_recovery_code
 
 logger = logging.getLogger("hyper_samen.user_store")
 
@@ -41,6 +42,20 @@ def _now_jalali() -> str:
     return jdatetime.datetime.now().strftime("%Y/%m/%d %H:%M")
 
 
+def _check_password_policy(password: str) -> None:
+    try:
+        validate_password(password)
+    except PolicyError as exc:
+        raise UserStoreError(str(exc)) from exc
+
+
+def _check_recovery_policy(code: str) -> None:
+    try:
+        validate_recovery_code(code)
+    except PolicyError as exc:
+        raise UserStoreError(str(exc)) from exc
+
+
 class UserStore:
     """Load/modify/save the encrypted collection of users."""
 
@@ -53,6 +68,7 @@ class UserStore:
         except (ValueError, TypeError) as exc:
             raise UserStoreError("کلید رمزنگاری کاربران نامعتبر است.") from exc
         self._users: dict[str, User] = {}
+        self._recovery_hash: str | None = None
         self._load()
 
     # -- persistence ----------------------------------------------------------
@@ -69,11 +85,13 @@ class UserStore:
         self._users = {
             u["username"].lower(): User.from_dict(u) for u in payload.get("users", [])
         }
+        self._recovery_hash = payload.get("recovery_hash") or None
 
     def _save(self) -> None:
         payload = {
             "version": _SCHEMA_VERSION,
             "users": [u.to_dict() for u in self._users.values()],
+            "recovery_hash": self._recovery_hash,
         }
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         token = self._fernet.encrypt(data)
@@ -102,6 +120,7 @@ class UserStore:
             raise UserStoreError("رمز عبور نمی‌تواند خالی باشد.")
         if username.lower() in self._users:
             raise UserStoreError("این نام کاربری قبلاً ثبت شده است.")
+        _check_password_policy(password)
         user = User(
             username=username,
             password_hash=hash_password(password),
@@ -114,10 +133,17 @@ class UserStore:
         logger.info("User created: %s (%s)", username, role.value)
         return user
 
-    def create_initial_admin(self, username: str, password: str) -> User:
+    def create_initial_admin(
+        self, username: str, password: str, recovery_code: str | None = None
+    ) -> User:
         if self.has_users():
             raise UserStoreError("کاربر اولیه قبلاً ایجاد شده است.")
-        return self.add_user(username, password, Role.ADMIN)
+        if recovery_code:
+            _check_recovery_policy(recovery_code)
+        user = self.add_user(username, password, Role.ADMIN)
+        if recovery_code:
+            self.set_recovery_code(recovery_code)
+        return user
 
     def delete_user(self, username: str) -> None:
         if username.lower() not in self._users:
@@ -140,6 +166,41 @@ class UserStore:
             raise UserStoreError("کاربر یافت نشد.")
         if not password:
             raise UserStoreError("رمز عبور نمی‌تواند خالی باشد.")
+        _check_password_policy(password)
         user.password_hash = hash_password(password)
         self._save()
         logger.info("Password changed for user %s", username)
+
+    # -- recovery (master) code ----------------------------------------------
+
+    def has_recovery_code(self) -> bool:
+        return bool(self._recovery_hash)
+
+    def set_recovery_code(self, code: str) -> None:
+        _check_recovery_policy(code)
+        self._recovery_hash = hash_password(code)
+        self._save()
+        logger.info("Recovery (master) code set/updated")
+
+    def verify_recovery_code(self, code: str) -> bool:
+        if not self._recovery_hash:
+            return False
+        return verify_password(code, self._recovery_hash)
+
+    def _primary_admin(self) -> User | None:
+        admins = [u for u in self._users.values() if u.role is Role.ADMIN]
+        if not admins:
+            return None
+        # The earliest-created admin is treated as the primary/main admin.
+        return sorted(admins, key=lambda u: u.created_at)[0]
+
+    def reset_admin_password(self, new_password: str) -> str:
+        """Reset the primary admin's password (used by the recovery flow)."""
+        admin = self._primary_admin()
+        if admin is None:
+            raise UserStoreError("حساب مدیری یافت نشد.")
+        _check_password_policy(new_password)
+        admin.password_hash = hash_password(new_password)
+        self._save()
+        logger.info("Admin password reset via recovery code: %s", admin.username)
+        return admin.username
